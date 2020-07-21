@@ -5,7 +5,14 @@ class ElementWrapper {
         this.root = document.createElement(type);
     }
     setAttribute(name, value){
-        this.root.setAttribute(name, value);
+        if(name.match(/^on([\s\S]+)$/)){
+            let eventName = RegExp.$1.replace(/^[\s\S]/, s => s.toLowerCase());
+            this.root.addEventListener(eventName, value);
+        }
+        if(name === "className"){
+            name = "class";
+        }
+        this.root.setAttribute(name, value);        
     }
     appendChild(vchild){
         vchild.mounTo(this.root);
@@ -27,17 +34,52 @@ class TextWrapper {
 export class Component {
     constructor(){
         this.children = [];
+        this.props = Object.create(null);
     }
     setAttribute(name, value){
+        if(name.match(/^on([\s\S]+)&/)){
+            console.log(RegExp.$1);
+        }
+        this.props[name] = value;
         this[name] = value;
     }
-    mounTo(parent){
-        let vdom = this.render();
-        console.log(vdom,123)
-        vdom.mounTo(parent);
+    mounTo(range){
+        this.range = range;
+        this.update();
+    }
+    update(){
+        let placeholder = document.createComment('plplaceholdera');
+        let range = document.createRange();
+        range.setStart(this.range.endContainer, this.range.endOffset);
+        range.setEnd(this.range.endContainer, this.range.endOffset);
+        range.insertNode(placeholder);
+
+        this.range.deleteContents();
+
+        let vdom = this.rander();
+        vdom.mounTo(this.range);
     }
     appendChild(vchild){
         this.children.push(vchild);
+    }
+    setState(state){
+        let merge = (oldState, newState) => {
+            for(let p of newState){
+                if(typeof newState[p] === "object"){
+                    if(typeof oldState[p] !== "object"){
+                        oldState = {};
+                    }
+                    merge(oldState[p], newState[p]);
+                }else{
+                    oldState[p] = newState[p];
+                }
+            }
+        }
+        if(!this.state && state){
+            this.state = {};
+        }
+        merge(this.state, state);
+        console.log(this.state);
     }
 }
 
