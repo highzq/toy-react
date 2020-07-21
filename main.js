@@ -14,7 +14,8 @@ class MyComponent extends Component{
 }
 
 let a = <MyComponent name="a" id="gao">
-    <span>1</span>
+    <p>1</p>
+    <p>123<span>1</span></p>
 </MyComponent>
 
-ToyReact.render(a,document.body);
+ToyReact.render(a,document.body); 
