@@ -6,7 +6,7 @@ class ElementWrapper {
     }
     setAttribute(name, value){
         if(name.match(/^on([\s\S]+)$/)){
-            let eventName = RegExp.$1.replace(/^[\s\S]/, s => s.toLowerCase());
+            const eventName = RegExp.$1.replace(/^[\s\S]/, (s) => s.toLowerCase());
             this.root.addEventListener(eventName, value);
         }
         if(name === "className"){
@@ -15,10 +15,19 @@ class ElementWrapper {
         this.root.setAttribute(name, value);        
     }
     appendChild(vchild){
-        vchild.mounTo(this.root);
+        const range = document.createRange();
+        if(this.root.children.length){
+            range.setStartAfter(this.root.lastChild);
+            range.setEndAfter(this.root.lastChild);
+        }else{
+            range.setStart(this.root, 0);
+            range.setEnd(this.root, 0);
+        }
+        vchild.mounTo(range);
     }
-    mounTo(parent){
-        parent.appendChild(this.root);
+    mounTo(range){
+        range.deleteContents();
+        range.insertNode(this.root);        
     }
 }
 
@@ -26,60 +35,108 @@ class TextWrapper {
     constructor(content){
         this.root = document.createTextNode(content);
     }
-    mounTo(parent){
-        parent.appendChild(this.root);
+    mounTo(range){
+        range.deleteContents();
+        range.insertNode(this.root);
     }
 }
 
+// export class Component {
+//     constructor(){
+//         this.children = [];
+//         this.props = Object.create(null);
+//     }
+//     setAttribute(name, value){
+//         if(name.match(/^on([\s\S]+)&/)){
+//             console.log(RegExp.$1);
+//         }
+//         this.props[name] = value;
+//         this[name] = value;
+//     }
+//     mounTo(range){
+//         this.range = range;
+//         this.update();
+//     }
+//     update(){
+//         let placeholder = document.createComment('plplaceholdera');
+//         let range = document.createRange();
+//         range.setStart(this.range.endContainer, this.range.endOffset);
+//         range.setEnd(this.range.endContainer, this.range.endOffset);
+//         range.insertNode(placeholder);
+
+//         this.range.deleteContents();
+//         const vdom = this.render();
+//         vdom.mounTo(this.range);
+//     }
+//     appendChild(vchild){
+//         this.children.push(vchild);
+//     }
+//     setState(state){
+//         let merge = (oldState, newState) => {
+//             for(let p of newState){
+//                 if(typeof newState[p] === "object"){
+//                     if(typeof oldState[p] !== "object"){
+//                         oldState = {};
+//                     }
+//                     merge(oldState[p], newState[p]);
+//                 }else{
+//                     oldState[p] = newState[p];
+//                 }
+//             }
+//         }
+//         if(!this.state && state){
+//             this.state = {};
+//         }
+//         merge(this.state, state);
+//         this.update();
+//     }
+// }
 export class Component {
-    constructor(){
-        this.children = [];
-        this.props = Object.create(null);
+    constructor() {
+      this.children = [];
+      this.props = Object.create(null);
     }
-    setAttribute(name, value){
-        if(name.match(/^on([\s\S]+)&/)){
-            console.log(RegExp.$1);
-        }
-        this.props[name] = value;
-        this[name] = value;
+    setAttribute(name, value) {
+      if (name.match(/^on([\s\S]+)$/)) {
+        console.log(RegExp.$1);
+      }
+      this.props[name] = value;
+      this[name] = value;
     }
-    mounTo(range){
-        this.range = range;
-        this.update();
+    mounTo(range) {
+      this.range = range;
+      this.update();
     }
-    update(){
-        let placeholder = document.createComment('plplaceholdera');
-        let range = document.createRange();
-        range.setStart(this.range.endContainer, this.range.endOffset);
-        range.setEnd(this.range.endContainer, this.range.endOffset);
-        range.insertNode(placeholder);
-
-        this.range.deleteContents();
-
-        let vdom = this.rander();
-        vdom.mounTo(this.range);
+    update() {
+      const placeholder = document.createComment("placeholder");
+      const range = document.createRange();
+      range.setStart(this.range.endContainer, this.range.endOffset);
+      range.setEnd(this.range.endContainer, this.range.endOffset);
+      range.insertNode(placeholder);
+  
+      this.range.deleteContents();
+      const vdom = this.render();
+      vdom.mounTo(this.range);
+  
+      // placeholder.parentNode.removeChild(placeholder)
     }
-    appendChild(vchild){
-        this.children.push(vchild);
+    appendChild(vchild) {
+      this.children.push(vchild);
     }
-    setState(state){
-        let merge = (oldState, newState) => {
-            for(let p of newState){
-                if(typeof newState[p] === "object"){
-                    if(typeof oldState[p] !== "object"){
-                        oldState = {};
-                    }
+    setState(state) {
+        const merge = (oldState, newState) => {
+            for (let p in newState) {
+                if (typeof newState[p] === "object") {
+                    if (typeof oldState[p] !== "object") oldState = {};
                     merge(oldState[p], newState[p]);
-                }else{
+                } else {
                     oldState[p] = newState[p];
                 }
             }
-        }
-        if(!this.state && state){
-            this.state = {};
-        }
+        };
+        if (!this.state && state) this.state = {};
         merge(this.state, state);
-        console.log(this.state);
+        this.update();
     }
 }
 
@@ -100,7 +157,7 @@ export let ToyReact = {
         if(typeof type === "string"){
             element = new ElementWrapper(type);
         }else{
-            element = new type;
+            element = new type();
         }
         /**
          * 设置标签属性
@@ -143,8 +200,15 @@ export let ToyReact = {
         return element;
     },
     render(vdom, element){
-        console.log(vdom)
-        vdom.mounTo(element);        
+        const range = document.createRange();
+        if(element.children.length){
+            range.setStartAfter(element.lastChild);
+            range.setEndAfter(element.lastChild);
+        }else{
+            range.setStart(element, 0);
+            range.setEnd(element, 0);
+        }
+        vdom.mounTo(range);        
     }
 
 }
